@@ -1,8 +1,9 @@
 cmake_minimum_required(VERSION 3.22)
 
-project(fontbake)
+project(fontbake VERSION 1.0.1)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED true)
 
 add_executable(${PROJECT_NAME} source/main.cpp)
 target_include_directories(${PROJECT_NAME} PRIVATE external)
+target_compile_definitions(${PROJECT_NAME} PRIVATE FONTBAKE_VERSION="${PROJECT_VERSION}")

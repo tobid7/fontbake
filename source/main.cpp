@@ -1,3 +1,7 @@
+#ifndef FONTBAKE_VERSION
+#define FONTBAKE_VERSION "unk-1.0.1"
+#endif
+
 #define STB_TRUETYPE_IMPLEMENTATION
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include <stb_image_write.h>
@@ -32,6 +36,7 @@ void GenerateFont(std::string path, int glyph_size, std::string out_path) {
   loader.close();
   stbtt_InitFont(&inf, buffer, 0);
   auto map = new unsigned char[type * type * 4];
+  memset(map, 0x00, type*type*4);
   float scale = stbtt_ScaleForPixelHeight(&inf, glyph_size);
   // 20% mod for y positioning
   int hlp = (type / 16) * 0.2;
@@ -75,6 +80,7 @@ void GenerateFont(std::string path, int glyph_size, std::string out_path) {
 
 int main(int argc, char *argv[]) {
   if (argc != 4) {
+    std::cout << "FontBake " << FONTBAKE_VERSION << std::endl;
     std::cout << "Uasage: " << std::endl;
     std::cout << argv[0] << " <font> <size> <name>" << std::endl;
     return 0;
