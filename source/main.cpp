@@ -1,5 +1,5 @@
 #ifndef FONTBAKE_VERSION
-#define FONTBAKE_VERSION "unk-1.0.1"
+#define FONTBAKE_VERSION "unk-1.1.0"
 #endif
 
 #define STB_TRUETYPE_IMPLEMENTATION
@@ -38,9 +38,10 @@ void GenerateFont(std::string path, int glyph_size, std::string out_path) {
   auto map = new unsigned char[type * type * 4];
   memset(map, 0x00, type*type*4);
   float scale = stbtt_ScaleForPixelHeight(&inf, glyph_size);
-  // 20% mod for y positioning
-  int hlp = (type / 16) * 0.2;
-  hlp *= -1;
+
+  int ascent, descent, lineGap;
+  stbtt_GetFontVMetrics(&inf, &ascent, &descent, &lineGap);
+  int baseline = static_cast<int>(ascent * scale);
 
   for (int c = 0; c < 255; c++) {
     if (stbtt_IsGlyphEmpty(&inf, c)) continue;
@@ -50,19 +51,15 @@ void GenerateFont(std::string path, int glyph_size, std::string out_path) {
         &inf, scale, scale, c, &width, &height, &xOffset, &yOffset);
     int x0, y0, x1, y1;
     stbtt_GetCodepointBitmapBox(&inf, c, scale, scale, &x0, &y0, &x1, &y1);
-    // std::cout << x0 << "," << x1 << "," << (unsigned char)c << std::endl;
+
+    int i = c % 16;
+    int j = c / 16;
+    int xoff = i * glyph_size;
+    int yoff = j * glyph_size + baseline + yOffset;
 
     for (int y = 0; y < height; ++y) {
       for (int x = 0; x < width; ++x) {
-        int i = c % 16;
-        int j = c / 16;
-
-        int yoff = hlp + glyph_size + y + y0 - 3;
-        int xoff = x + (x0 < 0 ? 1 : x0);
-        int map_pos = (((j * glyph_size + yoff) * 16 * glyph_size) +
-                       (i * glyph_size + xoff)) *
-                      4;
-
+        int map_pos = ((yoff + y) * type + (xoff + x)) * 4;
         map[map_pos + 0] = 255;
         map[map_pos + 1] = 255;
         map[map_pos + 2] = 255;
@@ -72,9 +69,24 @@ void GenerateFont(std::string path, int glyph_size, std::string out_path) {
 
     free(bitmap);
   }
+  // Debugging or so
+  // for (int i = 0; i <= 16; ++i) {
+  //     int pos = i * glyph_size;
+  //     for (int j = 0; j < type; ++j) {
+  //         // hz
+  //         map[(pos * type + j) * 4 + 0] = 255;
+  //         map[(pos * type + j) * 4 + 1] = 0;
+  //         map[(pos * type + j) * 4 + 2] = 0;
+  //         map[(pos * type + j) * 4 + 3] = 255;
+  //         // bt
+  //         map[(j * type + pos) * 4 + 0] = 255;
+  //         map[(j * type + pos) * 4 + 1] = 0;
+  //         map[(j * type + pos) * 4 + 2] = 0;
+  //         map[(j * type + pos) * 4 + 3] = 255;
+  //     }
+  // }
   std::cout << std::endl;
   stbi_write_png(out_path.c_str(), type, type, 4, map, type * 4);
-  delete[] map;
   delete[] buffer;
 }
 
