@@ -10,7 +10,8 @@
 #include <fstream>
 #include <iostream>
 
-void GenerateFont(std::string path, int glyph_size, std::string out_path) {
+void GenerateFont(std::string path, int glyph_size, std::string out_path,
+                  bool debug) {
   if (glyph_size < 8 || glyph_size > 128) {
     std::cout << "ERROR: Please use a Size between 8 and 128" << std::endl;
     std::cout << "INPUT: [" << glyph_size << "]" << std::endl;
@@ -36,7 +37,7 @@ void GenerateFont(std::string path, int glyph_size, std::string out_path) {
   loader.close();
   stbtt_InitFont(&inf, buffer, 0);
   auto map = new unsigned char[type * type * 4];
-  memset(map, 0x00, type*type*4);
+  memset(map, 0x00, type * type * 4);
   float scale = stbtt_ScaleForPixelHeight(&inf, glyph_size);
 
   int ascent, descent, lineGap;
@@ -70,37 +71,46 @@ void GenerateFont(std::string path, int glyph_size, std::string out_path) {
     free(bitmap);
   }
   // Debugging or so
-  // for (int i = 0; i <= 16; ++i) {
-  //     int pos = i * glyph_size;
-  //     for (int j = 0; j < type; ++j) {
-  //         // hz
-  //         map[(pos * type + j) * 4 + 0] = 255;
-  //         map[(pos * type + j) * 4 + 1] = 0;
-  //         map[(pos * type + j) * 4 + 2] = 0;
-  //         map[(pos * type + j) * 4 + 3] = 255;
-  //         // bt
-  //         map[(j * type + pos) * 4 + 0] = 255;
-  //         map[(j * type + pos) * 4 + 1] = 0;
-  //         map[(j * type + pos) * 4 + 2] = 0;
-  //         map[(j * type + pos) * 4 + 3] = 255;
-  //     }
-  // }
+  if (debug) {
+    for (int i = 0; i <= 16; ++i) {
+      int pos = i * glyph_size;
+      for (int j = 0; j < type; ++j) {
+        // hz
+        map[(pos * type + j) * 4 + 0] = 255;
+        map[(pos * type + j) * 4 + 1] = 0;
+        map[(pos * type + j) * 4 + 2] = 0;
+        map[(pos * type + j) * 4 + 3] = 255;
+        // bt
+        map[(j * type + pos) * 4 + 0] = 255;
+        map[(j * type + pos) * 4 + 1] = 0;
+        map[(j * type + pos) * 4 + 2] = 0;
+        map[(j * type + pos) * 4 + 3] = 255;
+      }
+    }
+  }
   std::cout << std::endl;
   stbi_write_png(out_path.c_str(), type, type, 4, map, type * 4);
   delete[] buffer;
 }
 
 int main(int argc, char *argv[]) {
-  if (argc != 4) {
+  if (argc < 4 || argc > 5) {
     std::cout << "FontBake " << FONTBAKE_VERSION << std::endl;
     std::cout << "Uasage: " << std::endl;
+    std::cout << "Use --debug at the end for a grid!" << std::endl;
     std::cout << argv[0] << " <font> <size> <name>" << std::endl;
     return 0;
   }
   std::string font = argv[1];
   int size = std::atoi(argv[2]);
   std::string out_path = argv[3];
+  bool debug = false;
+  if (argc == 5) {
+    if (std::string(argv[4]) == "--debug") {
+      debug = true;
+    }
+  }
   out_path += ".png";
-  GenerateFont(font, size, out_path);
+  GenerateFont(font, size, out_path, debug);
   return 0;
 }
